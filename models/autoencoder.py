@@ -18,7 +18,7 @@ class Autoencoder:
         self.input_layer = np.random.uniform(low=0, high=1, size=input_layer_len)
         self.output_layer = np.random.uniform(low=0, high=1, size=output_layer_len)
         self.nn = NeuralNetwork(input_layer=self.input_layer, hidden_size=hidden_layer_len,
-                                output_layer=self.output_layer, activation=activation)
+                                excpected=self.output_layer, activation=activation)
         self.loss_error = []
 
     def change_activation(self, activation):
@@ -38,7 +38,7 @@ class Autoencoder:
         import matplotlib.pyplot as plt
 
         # Data for plotting
-        points = np.asarray(self.loss_error)
+        points = np.asarray(self.loss_error) / 1e-9
         epoch = np.arange(0, len(self.loss_error))
 
         fig, ax = plt.subplots()
@@ -61,10 +61,11 @@ class Autoencoder:
         """
         return np.asarray([np.ravel(im) for im in data_to_fit], dtype='float64')
 
-    def train(self, train_data, epoch=1000):
+    def train(self, train_data, alpha, epoch=1000):
         """train the model.
 
         :param train_data: numpy array, a data to train the model.
+        :param alpha: a learning rate. (0.1 => 10%)
         :param epoch: int, an amount of loops for full train model.
         :return:
         """
@@ -78,8 +79,9 @@ class Autoencoder:
                 # feedforward.
                 self.nn.feedforward()
                 # back propagation.
-                self.nn.back_propagation()
-            self.loss_error.append(self.nn.loss_error)
+                self.nn.back_propagation(alpha=alpha)
+                # print('>epoch=%d, lrate=%.3f, error=%.3f' % (epoch, l_rate, sum_error))
+                self.loss_error.append(self.nn.loss_error)
 
     def predict(self, predict_val):
         """predict the output the model.
@@ -137,11 +139,27 @@ class Autoencoder:
         :type: numpy array.
         """
         img_ndarray = Autoencoder.image_to_np_array(image_path=image_path)
-        img = np.split(img_ndarray, img_ndarray.shape[0] / chunks_size)
+        print(img_ndarray.shape)
+        img = np.asarray(np.split(img_ndarray, img_ndarray.shape[0] / chunks_size))
+        print(img.shape)
         chunks = []
         for d in img:
             chunks.extend(np.split(d, d.shape[1] / chunks_size, axis=1))
         return np.asarray(chunks)
+
+    @staticmethod
+    def append_image_chunks(np_arr, chunks_size):
+        """appends a chucks from image to fit the to input layer of the nn.
+
+        :param chunks_size: int, a size of chunks. (rectangle [x,x])
+        :param np_arr: str, an numpy array image chunks.
+        :return: a list ot image chunks.
+        :type: numpy array.
+        """
+        img = []
+        for pixel in np_arr:
+            img.append(np.append(pixel, axis=1))
+        return
 
     @staticmethod
     def save_image_from_np(image_np, to_path):
@@ -183,6 +201,7 @@ if __name__ == '__main__':
     logger.info("Splitting image.")
     data = Autoencoder.split_image_chunks(image_path="{}/data/in/Photo_of_Lena_in_ppm.jpg".format(root_folder),
                                           chunks_size=chunk_size)
+    print(data.shape)
 
     logger.info("creating train folder with splitting images.")
     # train folder path.
@@ -224,14 +243,14 @@ if __name__ == '__main__':
                               output_layer_len=input_output_len)
     logger.info("training the model.")
     # train the data.
-    autoencoder.train(train_data=flat_train, epoch=100)
+    autoencoder.train(train_data=flat_train, alpha=0.2, epoch=100)
     autoencoder.nn.save_weights("{}/data/out".format(root_folder))
     logger.info("drawing graph.")
     # draw graph.
     autoencoder.draw_graph(folder_path="{}/data/out".format(root_folder))
-    logger.info("loading Lena image.")
-    # load image to predict.
-    np_image = Autoencoder.image_to_np_array(image_path="{}/data/in/Photo_of_Lena_in_ppm.jpg".format(root_folder))
-    logger.info("predicting Lena image.")
-    # predict
-    autoencoder.predict(predict_val=np_image)
+    # logger.info("loading Lena image.")
+    # # load image to predict.
+    # np_image = Autoencoder.image_to_np_array(image_path="{}/data/in/Photo_of_Lena_in_ppm.jpg".format(root_folder))
+    # logger.info("predicting Lena image.")
+    # # predict
+    # autoencoder.predict(predict_val=np_image)

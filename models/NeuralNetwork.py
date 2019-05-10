@@ -2,11 +2,11 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, input_layer, hidden_size, output_layer, activation='sigmoid'):
+    def __init__(self, input_layer, hidden_size, excpected, activation='sigmoid'):
         """
-        :param input_layer: list, an input vector.
+        :param input_layer: numpy array, an input vector.
         :param hidden_size: int, an hidden layer size.
-        :param output_layer: int, an output layer.
+        :param excpected: numpy array, an expected output.
         :param activation: str, the activation function to be used. ("sigmoid", "relu or "tanh")
         """
         # an input layer.
@@ -14,13 +14,17 @@ class NeuralNetwork:
         # a set of weights and biases between input layer to hidden layer.
         self.w1 = np.random.uniform(low=0, high=1, size=(input_layer.shape[0], hidden_size)).astype(dtype='float64')
         # a set of weights and biases between hidden layer to output layer.
-        self.w2 = np.random.uniform(low=0, high=1, size=(hidden_size, output_layer.shape[0])).astype(dtype='float64')
+        self.w2 = np.random.uniform(low=0, high=1, size=(hidden_size, excpected.shape[0])).astype(dtype='float64')
         # an hidden layer.
         self.layer1 = np.zeros(hidden_size)
+        # an hidden layer after activation function.
+        self.layer1_activation = np.zeros(hidden_size)
         # an output layer size.
-        self.output_layer = output_layer
+        self.expected = excpected
         # an output layer.
-        self.output = np.zeros(output_layer.shape)
+        self.output = np.zeros(excpected.shape)
+        # an output layer after activation function.
+        self.output_activation = np.zeros(excpected.shape)
         # a activation function.
         self.activation, self.activation_derivative = NeuralNetwork.get_activation(activation)
         # a loss function list of sum.
@@ -33,26 +37,37 @@ class NeuralNetwork:
         :rtype: numpy array.
         """
         # update hidden layer.
-        self.layer1 = self.activation(np.dot(self.input, self.w1))
+        self.layer1 = np.dot(self.input, self.w1)
+        # update hidden layer after activation function.
+        self.layer1_activation = self.activation(self.layer1)
         # update output layer.
-        self.output = self.activation(np.dot(self.layer1, self.w2))
-        return self.output
+        self.output = np.dot(self.layer1_activation, self.w2)
+        self.output_activation = self.activation(self.output)
+        return self.output_activation
 
-    def back_propagation(self):
+    def back_propagation(self, alpha):
         """minimizing the cost of a loss function, using sum of squares error.
 
+        :param alpha: a learning rate. (0.1 => 10%)
         :return:
         """
         # calculate the error of output layer.
-        output_error = self.output_layer - self.output
-        delta_output = 2 * output_error * self.activation_derivative(self.output)
-        # calculate the error of hidden layer.
+        output_error = self.expected - self.output
+        delta_output = output_error * self.activation_derivative(self.output)
+
+        # find error of hidden layer.
         error_layer1 = np.dot(delta_output, self.w2.T)
-        # find delta of wight 2
+        # find delta of weight 2
         delta_layer1 = error_layer1 * self.activation_derivative(self.layer1)
-        # update the weights with the derivative of the loss function
-        self.w1 += np.sum([self.input * cell for cell in delta_layer1])
-        self.w2 += np.sum([delta_output * cell for cell in self.layer1])
+
+        # transpose the delta output vector.
+        delta_output = delta_output[np.newaxis]
+
+        # update w2 weight.
+        self.layer1_activation = self.layer1_activation.reshape((self.layer1_activation.shape[0], 1))
+        self.w2 += np.dot(np.array(self.layer1_activation), delta_output) * alpha
+        # update w1 weight.
+        self.w1 += np.dot(self.input[np.newaxis].T, delta_layer1[np.newaxis]) * alpha
         # store mean sum squared loss.
         self.loss_error = np.mean(np.square(output_error))
 
@@ -76,7 +91,7 @@ class NeuralNetwork:
 
         :param value: value: numpy array, an output layer.
         """
-        self.output_layer = value
+        self.expected = value
 
     def save_weights(self, path):
         """save weights in text file.
@@ -121,7 +136,7 @@ if __name__ == "__main__":
                   [1, 0, 1],
                   [1, 1, 1]])
     y = np.array([[0], [1], [1], [0]])
-    nn = NeuralNetwork(input_layer=X, hidden_size=4, output_layer=y, activation="sigmoid")
+    nn = NeuralNetwork(input_layer=X, hidden_size=4, excpected=y, activation="sigmoid")
     print(nn.layer1.shape)
 
     for i in range(1500):
