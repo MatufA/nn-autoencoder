@@ -18,7 +18,7 @@ class Autoencoder:
         self.input_layer = np.random.uniform(low=0, high=1, size=input_layer_len)
         self.output_layer = np.random.uniform(low=0, high=1, size=output_layer_len)
         self.nn = NeuralNetwork(input_layer=self.input_layer, hidden_size=hidden_layer_len,
-                                excpected=self.output_layer, activation=activation)
+                                expected=self.output_layer, activation=activation)
         self.loss_error = []
 
     def change_activation(self, activation):
@@ -222,33 +222,33 @@ if __name__ == '__main__':
     data = Autoencoder.split_image_chunks(image_path="{}/data/in/Photo_of_Lena_in_ppm.jpg".format(root_folder),
                                           chunks_size=chunk_size)
 
-    logger.info("creating train folder with splitting images.")
-    # train folder path.
-    train_folder = "{}/data/train".format(root_folder)
-    # check if train folder exists.
-    if path.exists(train_folder):
-        logger.debug("removing train folder.")
-        # remove train folder.
-        rmtree(train_folder, ignore_errors=True)
-        logger.debug("creating new train folder.")
-        # make new train folder.
-        makedirs(train_folder)
-    else:
-        logger.debug("creating train folder.")
-        # create train folder.
-        makedirs(train_folder)
-
-    logger.debug("saving image chunks to train folder.")
-    # save images chunks to train folder.
-    for idx, im in enumerate(data):
-        Autoencoder.save_image_from_np(image_np=im,
-                                       to_path="{}/data/train/{:04d}.jpg".format(root_folder, idx))
-
-    # train split len
-    train_split = 0.75
-    # choose randomly train set.
-    logger.info("choosing randomly train set of size {}".format(int(data.shape[0] * train_split)))
-    train = Autoencoder.train_test_split(data=data, train_split=train_split) / 255.0
+    # logger.info("creating train folder with splitting images.")
+    # # train folder path.
+    # train_folder = "{}/data/train".format(root_folder)
+    # # check if train folder exists.
+    # if path.exists(train_folder):
+    #     logger.debug("removing train folder.")
+    #     # remove train folder.
+    #     rmtree(train_folder, ignore_errors=True)
+    #     logger.debug("creating new train folder.")
+    #     # make new train folder.
+    #     makedirs(train_folder)
+    # else:
+    #     logger.debug("creating train folder.")
+    #     # create train folder.
+    #     makedirs(train_folder)
+    #
+    # logger.debug("saving image chunks to train folder.")
+    # # save images chunks to train folder.
+    # for idx, im in enumerate(data):
+    #     Autoencoder.save_image_from_np(image_np=im,
+    #                                    to_path="{}/data/train/{:04d}.jpg".format(root_folder, idx))
+    #
+    # # train split len
+    # train_split = 0.75
+    # # choose randomly train set.
+    # logger.info("choosing randomly train set of size {}".format(int(data.shape[0] * train_split)))
+    # train = Autoencoder.train_test_split(data=data, train_split=train_split) / 255.0
 
     # fit data to input of the model.
     logger.info("fitting the chunks to input of the model.")

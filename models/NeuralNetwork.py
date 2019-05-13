@@ -2,11 +2,11 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, input_layer, hidden_size, excpected, activation='sigmoid'):
+    def __init__(self, input_layer, hidden_size, expected, activation='sigmoid'):
         """
         :param input_layer: numpy array, an input vector.
         :param hidden_size: int, an hidden layer size.
-        :param excpected: numpy array, an expected output.
+        :param expected: numpy array, an expected output.
         :param activation: str, the activation function to be used. ("sigmoid", "relu or "tanh")
         """
         # an input layer.
@@ -14,17 +14,17 @@ class NeuralNetwork:
         # a set of weights and biases between input layer to hidden layer.
         self.w1 = np.random.uniform(low=0, high=1, size=(input_layer.shape[0], hidden_size)).astype(dtype='float64')
         # a set of weights and biases between hidden layer to output layer.
-        self.w2 = np.random.uniform(low=0, high=1, size=(hidden_size, excpected.shape[0])).astype(dtype='float64')
+        self.w2 = np.random.uniform(low=0, high=1, size=(hidden_size, expected.shape[0])).astype(dtype='float64')
         # an hidden layer.
         self.layer1 = np.zeros(hidden_size)
         # an hidden layer after activation function.
         self.layer1_activation = np.zeros(hidden_size)
         # an output layer size.
-        self.expected = excpected
+        self.expected = expected
         # an output layer.
-        self.output = np.zeros(excpected.shape)
+        self.output = np.zeros(expected.shape)
         # an output layer after activation function.
-        self.output_activation = np.zeros(excpected.shape)
+        self.output_activation = np.zeros(expected.shape)
         # a activation function.
         self.activation, self.activation_derivative = NeuralNetwork.get_activation(activation)
         # a loss function list of sum.
