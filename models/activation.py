@@ -12,11 +12,11 @@ def sigmoid_derivative(x):
 
 
 def relu(x):
-    return np.maximum(0, x)
+    return x * (x > 0)
 
 
 def relu_derivative(x):
-    return np.heaviside(x, 0)
+    return 1. * (x > 0)
 
 
 def tanh(x):
@@ -24,4 +24,6 @@ def tanh(x):
 
 
 def tanh_derivative(x):
-    return 1.0 - pow(np.tanh(x), 2)
+    return 1.0 - x ** 2
+
+

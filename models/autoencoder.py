@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from NeuralNetwork import NeuralNetwork
 from config import conf_logger
 from datetime import datetime
@@ -145,7 +147,10 @@ class Autoencoder:
         :rtype: numpy array dtype int.
         """
         from matplotlib.image import imread
-        return np.asarray(imread(image_path), dtype='uint8')
+        img = imread(fname=image_path)
+        if len(img.shape) > 2:
+            img = img[:, :, 0]
+        return np.array(img, dtype='uint8')
 
     @staticmethod
     def split_row_pixels(row, chunk_size):
@@ -237,10 +242,11 @@ if __name__ == '__main__':
     input_output_len = chunk_size * chunk_size
     autoencoder = Autoencoder(input_layer_len=input_output_len,
                               hidden_layer_len=int(input_output_len / 2),
-                              output_layer_len=input_output_len)
+                              output_layer_len=input_output_len,
+                              activation='tanh')
 
     # train the data.
-    alpha = 0.3
+    alpha = 0.05
     logger.info("training the model.")
     autoencoder.train(train_data=flat_train, alpha=alpha, epoch=100)
 
@@ -249,12 +255,8 @@ if __name__ == '__main__':
     autoencoder.draw_graph(folder_path="{}/data/out".format(root_folder), alpha=alpha)
 
     # load image to predict.
-    logger.info("loading Lena image.")
-    np_image = Autoencoder.image_to_np_array(image_path="{}/data/in/Photo_of_Lena_in_ppm.jpg".format(root_folder))
-
-    # split the predict image to small chunks
-    logger.info("Splitting image.")
-    pred_data = Autoencoder.split_image_chunks(image_path="{}/data/in/Photo_of_Lena_in_ppm.jpg".format(root_folder),
+    logger.info("loading image.")
+    pred_data = Autoencoder.split_image_chunks(image_path="{}/data/in/cat.gif".format(root_folder),
                                                chunks_size=chunk_size)
 
     # fit data to input of the model.

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import numpy as np
 
 
@@ -129,4 +131,3 @@ class NeuralNetwork:
         elif activation == 'tanh':
             from activation import tanh, tanh_derivative
             return tanh, tanh_derivative
-
