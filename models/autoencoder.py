@@ -29,28 +29,6 @@ class Autoencoder:
         """
         self.activation = self.nn.change_activation(activation=activation)
 
-    def draw_graph(self, folder_path):
-        """draw a graph of a loss function to screen and to file.
-
-        :param folder_path: str, a path to folder for draw a graph.
-        :return:
-        """
-        import matplotlib.pyplot as plt
-
-        # Data for plotting
-        points = np.asarray(self.loss_error) / 1e-9
-        epoch = np.arange(0, len(self.loss_error))
-
-        fig, ax = plt.subplots()
-        ax.plot(epoch, points)
-
-        ax.set(xlabel='epoch (num)', ylabel='loss function (sum)',
-               title='Loss function over epoch.')
-        ax.grid()
-
-        fig.savefig("{}/{}.png".format(folder_path, datetime.now().strftime("%Y-%m-%d_%H-%M")))
-        plt.show()
-
     def train(self, train_data, alpha, epoch=1000):
         """train the model.
 
@@ -59,19 +37,24 @@ class Autoencoder:
         :param epoch: int, an amount of loops for full train model.
         :return:
         """
-        for sample in train_data:
-            # set input layer of nn.
-            self.nn.set_input(value=sample)
-            # set output layer of nn.
-            self.nn.set_expected(value=sample)
-            # train epoch
-            for i in range(epoch):
+        folder = path.dirname(path.dirname(__file__))
+        # train epoch
+        for i in range(epoch):
+            for sample in train_data:
+                # set input layer of nn.
+                self.nn.set_input(value=sample)
+                # set output layer of nn.
+                self.nn.set_expected(value=sample)
                 # feedforward.
                 self.nn.feedforward()
                 # back propagation.
                 self.nn.back_propagation(alpha=alpha)
-                # print('>epoch=%d, lrate=%.3f, error=%.3f' % (epoch, l_rate, sum_error))
             self.loss_error.append(self.nn.loss_error)
+            print('epoch={epoch}, l_rate={l_rate:.3f}, loss={loss:.5f}'.format(epoch=i,
+                                                                               l_rate=alpha,
+                                                                               loss=self.nn.loss_error))
+        # save last weights.
+        autoencoder.nn.save_weights("{}/data/out".format(folder))
 
     def predict(self, predict_val):
         """predict the output the model.
@@ -83,16 +66,39 @@ class Autoencoder:
         # root folder path.
         root = path.dirname(path.dirname(__file__))
         out_img = []
+        # load weight.
+        self.nn.load_weights("{}/data/out".format(root))
         for sample in predict_val:
             # set input layer of nn.
             self.nn.set_input(value=sample)
             # set output layer of nn.
             self.nn.set_expected(value=sample)
-            # load weight.
-            self.nn.load_weights("{}/data/out".format(root))
             # feedforward.
             out_img.append(self.nn.feedforward())
         return np.array(out_img)
+
+    def draw_graph(self, folder_path, alpha):
+        """draw a graph of a loss function to screen and to file.
+
+        :param alpha: float, a learning rate.
+        :param folder_path: str, a path to folder for draw a graph.
+        :return:
+        """
+        import matplotlib.pyplot as plt
+
+        # Data for plotting
+        points = np.asarray(self.loss_error)
+        epoch = np.arange(0, len(self.loss_error))
+
+        fig, ax = plt.subplots()
+        ax.plot(epoch, points)
+
+        ax.set(xlabel='epoch (num)', ylabel='loss function (sum)',
+               title='Loss function over epoch (lerning rate= {}).'.format(alpha))
+        ax.grid()
+
+        fig.savefig("{}/{}.png".format(folder_path, datetime.now().strftime("%Y-%m-%d_%H-%M")))
+        plt.show()
 
     @staticmethod
     def fit_transform(data_to_fit):
@@ -197,6 +203,7 @@ class Autoencoder:
         :return:
         """
         from matplotlib import pyplot as plt
+        plt.gray()
         plt.figure()
         plt.imshow(image_np)
         plt.axis('off')
@@ -204,8 +211,7 @@ class Autoencoder:
 
 
 if __name__ == '__main__':
-    from os import path, makedirs
-    from shutil import rmtree
+    from os import path
 
     # root folder path.
     root_folder = path.dirname(path.dirname(__file__))
@@ -222,34 +228,6 @@ if __name__ == '__main__':
     data = Autoencoder.split_image_chunks(image_path="{}/data/in/Photo_of_Lena_in_ppm.jpg".format(root_folder),
                                           chunks_size=chunk_size)
 
-    # logger.info("creating train folder with splitting images.")
-    # # train folder path.
-    # train_folder = "{}/data/train".format(root_folder)
-    # # check if train folder exists.
-    # if path.exists(train_folder):
-    #     logger.debug("removing train folder.")
-    #     # remove train folder.
-    #     rmtree(train_folder, ignore_errors=True)
-    #     logger.debug("creating new train folder.")
-    #     # make new train folder.
-    #     makedirs(train_folder)
-    # else:
-    #     logger.debug("creating train folder.")
-    #     # create train folder.
-    #     makedirs(train_folder)
-    #
-    # logger.debug("saving image chunks to train folder.")
-    # # save images chunks to train folder.
-    # for idx, im in enumerate(data):
-    #     Autoencoder.save_image_from_np(image_np=im,
-    #                                    to_path="{}/data/train/{:04d}.jpg".format(root_folder, idx))
-    #
-    # # train split len
-    # train_split = 0.75
-    # # choose randomly train set.
-    # logger.info("choosing randomly train set of size {}".format(int(data.shape[0] * train_split)))
-    # train = Autoencoder.train_test_split(data=data, train_split=train_split) / 255.0
-
     # fit data to input of the model.
     logger.info("fitting the chunks to input of the model.")
     flat_train = Autoencoder.fit_transform(data_to_fit=data) / 255.0
@@ -262,13 +240,13 @@ if __name__ == '__main__':
                               output_layer_len=input_output_len)
 
     # train the data.
+    alpha = 0.3
     logger.info("training the model.")
-    autoencoder.train(train_data=flat_train, alpha=0.2, epoch=100)
-    autoencoder.nn.save_weights("{}/data/out".format(root_folder))
+    autoencoder.train(train_data=flat_train, alpha=alpha, epoch=100)
 
     # draw graph.
     logger.info("drawing graph.")
-    autoencoder.draw_graph(folder_path="{}/data/out".format(root_folder))
+    autoencoder.draw_graph(folder_path="{}/data/out".format(root_folder), alpha=alpha)
 
     # load image to predict.
     logger.info("loading Lena image.")
@@ -288,15 +266,19 @@ if __name__ == '__main__':
     pred_out = autoencoder.predict(predict_val=pred_flat) * 255
 
     # reverse fit transform
+    logger.info("changing back to multi dimension.")
     pred_out_mult = Autoencoder.reverse_transform(data_to_fit=pred_out, size=chunk_size)
 
     # appends chunks to one image.
+    logger.info("appending chunks.")
     img_data = Autoencoder.append_image_chunks(np_arr=pred_out_mult, original_size=512).astype('uint8')
 
     # show image.
     Autoencoder.show_image_from_np(image_np=img_data)
 
     # save image.
+    logger.info("saving image.")
     Autoencoder.save_image_from_np(image_np=img_data,
                                    to_path="{0}/data/out/predicted_{1}.png"
                                    .format(root_folder, datetime.now().strftime("%Y-%m-%d_%H-%M")))
+    logger.info("Done.")
